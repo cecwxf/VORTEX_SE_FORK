@@ -132,3 +132,24 @@ echo "source <build-path>/ci/toolchain_env.sh" >> ~/.bashrc
 ./ci/blackbox.sh --app=demo --debug=3
 ```
 - For additional information, check out the [documentation](docs/index.md)
+
+## Using Vortex runtime with PoCL(simx) in cecwxf fork
+
+This fork is used by PoCL Vortex driver through runtime APIs such as
+`vx_dev_open`, `vx_upload_kernel_file`, `vx_start`, and `vx_ready_wait`.
+
+### Build simx runtime libs
+
+```bash
+cd ~/.openclaw/workspace/vortex
+make -C third_party -j4
+make -C runtime simx -j4
+```
+
+Expected runtime outputs:
+
+- `runtime/libvortex.so`
+- `runtime/libvortex-simx.so`
+- `runtime/libsimx.so`
+
+These libraries are consumed by PoCL build-vx-simx4 configuration and test flow.
