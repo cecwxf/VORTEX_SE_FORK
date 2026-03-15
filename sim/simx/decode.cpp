@@ -519,6 +519,23 @@ void Emulator::decode(uint32_t code, uint32_t wid, uint64_t uuid) {
   auto rs2 = (code >> shift_rs2) & mask_reg;
   auto rs3 = (code >> shift_rs3) & mask_reg;
 
+  auto decode_abort = [&](int line) {
+    auto pc = warps_.at(wid).PC;
+    std::cerr << "SIMX decode abort: line=" << line
+              << " wid=" << std::dec << wid
+              << " pc=0x" << std::hex << pc
+              << " code=0x" << code
+              << " opcode=0x" << ((code >> shift_opcode) & mask_opcode)
+              << " funct3=0x" << ((code >> shift_funct3) & mask_funct3)
+              << " funct7=0x" << ((code >> shift_funct7) & mask_funct7)
+              << " rd=" << std::dec << ((code >> shift_rd) & mask_reg)
+              << " rs1=" << ((code >> shift_rs1) & mask_reg)
+              << " rs2=" << ((code >> shift_rs2) & mask_reg)
+              << " rs3=" << ((code >> shift_rs3) & mask_reg)
+              << std::endl;
+    std::abort();
+  };
+
   switch (op) {
   case Opcode::LUI:
   case Opcode::AUIPC: { // RV32I: LUI / AUIPC
@@ -547,7 +564,7 @@ void Emulator::decode(uint32_t code, uint32_t wid, uint64_t uuid) {
       if (funct3 == 0x7) { // CZERO.NEZ
         imm = 1;
       } else {
-        std::abort();
+        decode_abort(__LINE__);
       }
       instr->setOpType(AluType::CZERO);
       instr->setArgs(IntrAluArgs{0, 0, imm});
@@ -587,7 +604,7 @@ void Emulator::decode(uint32_t code, uint32_t wid, uint64_t uuid) {
         break;
       }
       default:
-        std::abort();
+        decode_abort(__LINE__);
       }
       instr->setArgs(IntrMdvArgs{is_w});
     } else {
@@ -636,7 +653,7 @@ void Emulator::decode(uint32_t code, uint32_t wid, uint64_t uuid) {
         break;
       }
       default:
-        std::abort();
+        decode_abort(__LINE__);
       }
       instr->setArgs(IntrAluArgs{is_imm, is_w, imm});
     }
@@ -704,7 +721,7 @@ void Emulator::decode(uint32_t code, uint32_t wid, uint64_t uuid) {
       case 6: instArgs.width = 2; break;
       case 7: instArgs.width = 3; break;
       default:
-        std::abort();
+        decode_abort(__LINE__);
       }
       instr->setSrcReg(0, rs1, RegType::Integer);
       auto mop = (code >> shift_vmop) & mask_vmop;
@@ -772,7 +789,7 @@ void Emulator::decode(uint32_t code, uint32_t wid, uint64_t uuid) {
     case 0x18: instr->setOpType(AmoType::AMOMINU); break;
     case 0x1c: instr->setOpType(AmoType::AMOMAXU); break;
     default:
-      std::abort();
+      decode_abort(__LINE__);
     }
     instr->setArgs(IntrAmoArgs{funct3, aq, rl});
     instr->setDestReg(rd, RegType::Integer);
@@ -789,7 +806,7 @@ void Emulator::decode(uint32_t code, uint32_t wid, uint64_t uuid) {
       case 2: case 6: instr->setOpType(CsrType::CSRRS); break;
       case 3: case 7: instr->setOpType(CsrType::CSRRC); break;
       default:
-        std::abort();
+        decode_abort(__LINE__);
       }
       auto imm12 = code >> shift_rs2;
       if (funct3 < 5) {
@@ -899,7 +916,7 @@ void Emulator::decode(uint32_t code, uint32_t wid, uint64_t uuid) {
       instr->setSrcReg(0, rs1, RegType::Integer);
       break;
     default:
-      std::abort();
+      decode_abort(__LINE__);
     }
     ibuffer.push_back(instr);
   } break;
@@ -991,7 +1008,7 @@ void Emulator::decode(uint32_t code, uint32_t wid, uint64_t uuid) {
       }
     } break;
     default:
-      std::abort();
+      decode_abort(__LINE__);
     }
     ibuffer.push_back(instr);
   } break;
@@ -1033,7 +1050,7 @@ void Emulator::decode(uint32_t code, uint32_t wid, uint64_t uuid) {
         wctlArgs.is_neg = (rd != 0);
         break;
       default:
-        std::abort();
+        decode_abort(__LINE__);
       }
       instr->setArgs(wctlArgs);
       ibuffer.push_back(instr);
@@ -1072,7 +1089,7 @@ void Emulator::decode(uint32_t code, uint32_t wid, uint64_t uuid) {
         instr->setSrcReg(1, rs2, RegType::Integer);
         break;
       default:
-        std::abort();
+        decode_abort(__LINE__);
       }
       ibuffer.push_back(instr);
     } break;
@@ -1114,15 +1131,15 @@ void Emulator::decode(uint32_t code, uint32_t wid, uint64_t uuid) {
         }
       } break;
       default:
-        std::abort();
+        decode_abort(__LINE__);
       }
     } break;
   #endif
     default:
-      std::abort();
+      decode_abort(__LINE__);
     }
   } break;
   default:
-    std::abort();
+    decode_abort(__LINE__);
   }
 }
